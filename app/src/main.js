@@ -1,11 +1,12 @@
 // Neon Night Cover Studio — the editor.
 //
-// Wires the page: photo slots, layout and grade pickers, the words, the
-// live preview (click a panel to pick it, drag to pan its photo, scroll to
-// zoom, reset to reframe) and the PNG export in three sizes. A `?shot=`
-// query hands the page to shots.js instead, for fixed screenshot scenes.
+// Wires the page: five photo slots (samples + uploads), layout and grade
+// pickers, the words, the live preview (click a panel to pick it, drag to
+// pan its photo, scroll or slide to zoom, reset to reframe) and the PNG
+// export in three sizes. A `?shot=` query hands the page to shots.js
+// instead, for fixed screenshot scenes.
 
-import { drawCover } from './cover.js';
+import { drawCover, ensureFonts } from './cover.js';
 import { runShot } from './shots.js';
 import { GRADES } from './grades.js';
 import { LAYOUTS, layoutGeometry } from './layouts.js';
@@ -19,70 +20,89 @@ const SIZES = [
 const SAMPLES = [
   { id: 'boulevard', label: 'Boulevard' },
   { id: 'pier', label: 'Pier' },
+  { id: 'car', label: 'Sunset Car' },
+  { id: 'palms', label: 'Boardwalk' },
+  { id: 'neon', label: 'Neon Street' },
 ];
 
-const SURPRISE_TITLES = ['NEON NIGHT', 'VICE LIGHTS', 'PALM STATIC', 'MIDNIGHT DRIVE', 'CHROME PALMS', 'OCEAN STATIC', 'LAST SUNSET', 'LEONIDA HEAT'];
-const SURPRISE_SUBS = ['city of neon dreams', 'one more ride', 'chasing the last light', 'every street is a stage', 'born to run the night', 'where the palms glow'];
+const SURPRISE_TITLES = [
+  'NEON NIGHT', 'VICE LIGHTS', 'PALM STATIC', 'MIDNIGHT DRIVE',
+  'CHROME PALMS', 'OCEAN STATIC', 'LAST SUNSET', 'LEONIDA HEAT',
+  'SUNSET DRIVE', 'MIDNIGHT TIDE', 'GOLDEN STATIC', 'HARBOR LIGHTS',
+];
+const SURPRISE_SUBS = [
+  'city of neon dreams', 'one more ride', 'chasing the last light',
+  'every street is a stage', 'born to run the night',
+  'where the palms glow', 'five shots, one night', 'the tide never waits',
+];
 
 const canvas = document.getElementById('preview');
 const statusEl = document.getElementById('status');
 const selectedEl = document.getElementById('selectedPanel');
+const zoomEl = document.getElementById('zoom');
 
 const state = {
-  layout: 'big-left',
-  grade: 'neon-night',
+  layout: 'collage',
+  grade: 'violet',
+  ink: 0.4,
   title: 'NEON NIGHT',
   subtitle: 'city of neon dreams',
   tagline: 'EVERY LIGHT HIDES A STORY',
   kicker: 'WELCOME TO LEONIDA',
-  photos: { A: null, B: null, C: null },
+  photos: [null, null, null, null, null],
+  panelPhoto: {},
   crops: {},
   showStarburst: true,
   showStars: true,
-  showBarcode: true,
   size: SIZES[0],
 };
 
 let selectedPanel = 0;
-let fontsReady = false;
 
 /**
- * Default crops per layout, tuned to the two sample photos so faces stay in
- * frame: the samples are portrait/square while the panels are wide, so the
- * default pan (oy) lifts the face into view instead of centring the photo.
- * Index = panel index of the layout's geometry.
+ * Default crops per layout, so faces stay in frame: the portrait samples
+ * are taller than the wide panels, so the default pan (oy) lifts the face
+ * into view instead of centring the photo. Index = panel index.
  */
-const SLOT_CROPS = {
-  'big-left': [
-    { zoom: 1, ox: 0, oy: 0.65 }, // hero A — face up into the frame
-    { zoom: 1, ox: 0, oy: 0.85 }, // top B — hat and face
-    { zoom: 1, ox: 0.05, oy: 0.6 }, // middle C — face in frame
-    { zoom: 1.1, ox: 0.26, oy: -0.3 }, // bottom A — hand on the car door
+const DEFAULT_CROPS = {
+  collage: [
+    { zoom: 1, ox: 0, oy: 0.6 },
+    { zoom: 1.1, ox: 0, oy: 0.7 },
+    { zoom: 1.1, ox: 0, oy: 0.5 },
+    { zoom: 1.2, ox: 0.1, oy: 0.4 },
+    { zoom: 1.15, ox: 0, oy: 0.6 },
+    { zoom: 1.1, ox: 0, oy: 0.55 },
+    { zoom: 1.2, ox: -0.1, oy: 0.5 },
+  ],
+  polaroid: [
+    { zoom: 1.1, ox: 0, oy: 0.55 },
+    { zoom: 1.1, ox: 0, oy: 0.5 },
+    { zoom: 1.15, ox: 0, oy: 0.6 },
+    { zoom: 1.1, ox: 0, oy: 0.45 },
+    { zoom: 1.15, ox: 0, oy: 0.55 },
+  ],
+  slices: [
+    { zoom: 1, ox: 0, oy: 0 },
+    { zoom: 1, ox: 0, oy: 0 },
+    { zoom: 1, ox: 0, oy: 0 },
+    { zoom: 1, ox: 0, oy: 0 },
+    { zoom: 1, ox: 0, oy: 0 },
   ],
   grid: [
-    { zoom: 1.15, ox: 0, oy: 0.58 },
-    { zoom: 1.15, ox: 0, oy: 0.57 },
-    { zoom: 1.15, ox: 0.05, oy: 0.58 },
-    { zoom: 1.3, ox: -0.05, oy: 0.58 },
-    { zoom: 1.25, ox: 0, oy: 0.57 },
-    { zoom: 1.35, ox: 0.05, oy: 0.58 },
-    { zoom: 1.2, ox: 0, oy: 0.58 },
-    { zoom: 1.3, ox: -0.08, oy: 0.57 },
-  ],
-  filmstrip: [
-    { zoom: 1, ox: 0, oy: 1 }, // hero: the sky, palms and sun at the photo's top
-    { zoom: 1, ox: 0, oy: 0.22 }, // sea and horizon
-    { zoom: 1.3, ox: 0.15, oy: -0.33 }, // the red car door and mirror
-    { zoom: 1.3, ox: 0, oy: 0.58 }, // lifeguard tower and beach
-  ],
-  split: [
-    { zoom: 1, ox: 0, oy: 0.74 },
-    { zoom: 1, ox: 0, oy: 0.74 },
+    { zoom: 1.15, ox: 0, oy: 0.55 },
+    { zoom: 1.15, ox: 0, oy: 0.5 },
+    { zoom: 1.2, ox: 0.05, oy: 0.55 },
+    { zoom: 1.25, ox: 0, oy: 0.5 },
+    { zoom: 1.15, ox: 0, oy: 0.6 },
+    { zoom: 1.3, ox: 0, oy: 0.55 },
+    { zoom: 1.2, ox: 0, oy: 0.5 },
+    { zoom: 1.25, ox: -0.05, oy: 0.55 },
+    { zoom: 1.2, ox: 0, oy: 0.6 },
   ],
 };
 
-export function defaultCrops(layoutId, count) {
-  const table = SLOT_CROPS[layoutId] ?? SLOT_CROPS['big-left'];
+function freshCrops(layoutId) {
+  const table = DEFAULT_CROPS[layoutId] || DEFAULT_CROPS.collage;
   const crops = {};
   table.forEach((c, i) => {
     crops[i] = { ...c };
@@ -104,17 +124,6 @@ export function loadImage(url) {
   });
 }
 
-async function ensureFonts() {
-  if (fontsReady) return;
-  try {
-    await Promise.all([document.fonts.load('400 100px Anton'), document.fonts.load('100px Pacifico')]);
-    await document.fonts.ready;
-  } catch {
-    // Fall back to system fonts; the cover still draws.
-  }
-  fontsReady = true;
-}
-
 /** Renders the current state onto the preview canvas (at export size). */
 export async function redraw() {
   await ensureFonts();
@@ -125,24 +134,26 @@ export async function redraw() {
 
 function applyLayout(layoutId) {
   state.layout = layoutId;
-  state.crops = defaultCrops(layoutId, panelCountFor(layoutId));
+  state.crops = freshCrops(layoutId);
+  state.panelPhoto = {};
   selectedPanel = 0;
   syncPickers();
   redraw();
 }
 
-function panelCountFor(layoutId) {
-  // Keep in sync with layouts.js: grid 8 panels, filmstrip 4, split 2, big-left 4.
-  return layoutId === 'grid' ? 8 : layoutId === 'filmstrip' ? 4 : layoutId === 'split' ? 2 : 4;
-}
-
 function syncPickers() {
-  document.querySelectorAll('#layouts button').forEach((b) => b.classList.toggle('active', b.dataset.layout === state.layout));
-  document.querySelectorAll('#grades button').forEach((b) => b.classList.toggle('active', b.dataset.grade === state.grade));
+  document.querySelectorAll('#layouts button').forEach((b) => {
+    b.classList.toggle('active', b.dataset.layout === state.layout);
+  });
+  document.querySelectorAll('#grades button').forEach((b) => {
+    b.classList.toggle('active', b.dataset.grade === state.grade);
+  });
   document.querySelectorAll('input[name="size"]').forEach((r) => {
     r.checked = r.value === state.size.id;
   });
-  selectedEl.textContent = `Panel ${selectedPanel + 1} selected — drag to pan, scroll to zoom.`;
+  const crop = state.crops[selectedPanel] || { zoom: 1 };
+  zoomEl.value = String(crop.zoom || 1);
+  selectedEl.textContent = `Panel ${selectedPanel + 1} selected — click a photo below to put it here, drag to pan, scroll to zoom.`;
 }
 
 function buildPickers() {
@@ -161,7 +172,8 @@ function buildPickers() {
     const b = document.createElement('button');
     b.type = 'button';
     b.dataset.grade = grade.id;
-    b.innerHTML = `<i style="background:${grade.swatch}"></i><strong>${grade.label}</strong>`;
+    const stops = grade.stops.map(([t, c]) => `${c} ${Math.round(t * 100)}%`).join(', ');
+    b.innerHTML = `<i style="background:linear-gradient(135deg,${stops})"></i><strong>${grade.name}</strong>`;
     b.addEventListener('click', () => {
       state.grade = grade.id;
       syncPickers();
@@ -181,40 +193,85 @@ function buildPickers() {
   }
 }
 
-function buildPhotoSlots() {
-  document.querySelectorAll('.slot').forEach((slotEl) => {
-    const slot = slotEl.dataset.slot;
-    const thumb = slotEl.querySelector('.thumb');
-    const file = slotEl.querySelector('input[type="file"]');
-    slotEl.querySelectorAll('[data-sample]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        try {
-          state.photos[slot] = await loadImage(`samples/${btn.dataset.sample}.jpg`);
-          thumb.src = `samples/${btn.dataset.sample}.jpg`;
-          thumb.hidden = false;
-          slotEl.querySelectorAll('[data-sample]').forEach((x) => x.classList.toggle('active', x === btn));
-          setStatus(`${slotEl.querySelector('h3').textContent} photo: ${btn.dataset.sample}.`);
-          redraw();
-        } catch {
-          setStatus(`Could not load the ${btn.dataset.sample} sample.`);
-        }
-      });
+function buildPhotoStrip() {
+  const strip = document.getElementById('photostrip');
+  SAMPLES.forEach((sample, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'photo-thumb';
+    b.dataset.photo = String(i);
+    b.title = `${sample.label} — click to put it in the selected panel`;
+    b.innerHTML = `<img alt="${sample.label}" hidden><span>${sample.label}</span>`;
+    b.addEventListener('click', () => {
+      if (!state.photos[i]) {
+        setStatus(`${sample.label} is not loaded yet — press Load samples.`);
+        return;
+      }
+      state.panelPhoto[selectedPanel] = i;
+      setStatus(`Panel ${selectedPanel + 1} now shows ${sample.label}.`);
+      redraw();
     });
-    file.addEventListener('change', async () => {
-      const f = file.files[0];
-      if (!f) return;
-      const url = URL.createObjectURL(f);
+    strip.appendChild(b);
+  });
+}
+
+async function loadSamples() {
+  let loaded = 0;
+  for (let i = 0; i < SAMPLES.length; i++) {
+    try {
+      state.photos[i] = await loadImage(`samples/${SAMPLES[i].id}.jpg`);
+      const thumb = document.querySelector(`.photo-thumb[data-photo="${i}"] img`);
+      if (thumb) {
+        thumb.src = `samples/${SAMPLES[i].id}.jpg`;
+        thumb.hidden = false;
+      }
+      loaded += 1;
+    } catch {
+      // A missing sample leaves its slot empty; uploads still work.
+    }
+  }
+  state.panelPhoto = {};
+  state.crops = freshCrops(state.layout);
+  return loaded;
+}
+
+function bindPhotos() {
+  document.getElementById('loadSamples').addEventListener('click', async () => {
+    const n = await loadSamples();
+    setStatus(`${n} sample photos loaded.`);
+    redraw();
+  });
+  document.getElementById('autoFill').addEventListener('click', () => {
+    state.panelPhoto = {};
+    state.crops = freshCrops(state.layout);
+    selectedPanel = 0;
+    syncPickers();
+    redraw();
+    setStatus('Panels auto-filled from all five photos.');
+  });
+  document.getElementById('upload').addEventListener('change', async (e) => {
+    const files = [...(e.target.files || [])];
+    let slot = 0;
+    for (const file of files) {
+      if (slot >= SAMPLES.length) break;
+      const url = URL.createObjectURL(file);
       try {
         state.photos[slot] = await loadImage(url);
-        thumb.src = url;
-        thumb.hidden = false;
-        slotEl.querySelectorAll('[data-sample]').forEach((x) => x.classList.remove('active'));
-        setStatus(`${slotEl.querySelector('h3').textContent} photo: your upload.`);
-        redraw();
+        const thumb = document.querySelector(`.photo-thumb[data-photo="${slot}"] img`);
+        if (thumb) {
+          thumb.src = url;
+          thumb.hidden = false;
+        }
+        slot += 1;
       } catch {
-        setStatus('That file could not be read as an image.');
+        setStatus('One file could not be read as an image.');
       }
-    });
+    }
+    if (slot > 0) {
+      state.panelPhoto = {};
+      setStatus(`${slot} of your photos loaded into the first slots.`);
+      redraw();
+    }
   });
 }
 
@@ -228,7 +285,7 @@ function bindWords() {
       redraw();
     });
   }
-  for (const [id, key] of [['showStarburst', 'showStarburst'], ['showStars', 'showStars'], ['showBarcode', 'showBarcode']]) {
+  for (const [id, key] of [['showStarburst', 'showStarburst'], ['showStars', 'showStars']]) {
     const box = document.getElementById(id);
     box.checked = state[key];
     box.addEventListener('change', () => {
@@ -236,6 +293,17 @@ function bindWords() {
       redraw();
     });
   }
+  const ink = document.getElementById('ink');
+  ink.value = String(Math.round(state.ink * 100));
+  ink.addEventListener('input', () => {
+    state.ink = Number(ink.value) / 100;
+    redraw();
+  });
+  zoomEl.addEventListener('input', () => {
+    const crop = state.crops[selectedPanel] || (state.crops[selectedPanel] = { zoom: 1, ox: 0, oy: 0 });
+    crop.zoom = Number(zoomEl.value);
+    redraw();
+  });
 }
 
 /** Renders the state at (w, h) on a fresh canvas and downloads it as PNG. */
@@ -273,16 +341,20 @@ function bindExport() {
     state.grade = pick(GRADES).id;
     state.title = pick(SURPRISE_TITLES);
     state.subtitle = pick(SURPRISE_SUBS);
-    state.crops = defaultCrops(state.layout, panelCountFor(state.layout));
+    state.ink = 0.2 + Math.random() * 0.5;
+    state.crops = freshCrops(state.layout);
+    state.panelPhoto = {};
     document.getElementById('title').value = state.title;
     document.getElementById('subtitle').value = state.subtitle;
+    document.getElementById('ink').value = String(Math.round(state.ink * 100));
     selectedPanel = 0;
     syncPickers();
     redraw();
     setStatus('Surprise! New layout, grade and words — export it if you like it.');
   });
   document.getElementById('resetCrop').addEventListener('click', () => {
-    state.crops = defaultCrops(state.layout, panelCountFor(state.layout));
+    state.crops = freshCrops(state.layout);
+    state.panelPhoto = {};
     redraw();
     setStatus('Crops reset.');
   });
@@ -299,7 +371,6 @@ function canvasPoint(e) {
 }
 
 function panelAt(x, y) {
-  // Recompute the geometry at the preview size and find the panel hit.
   const geo = layoutGeometry(state.layout, canvas.width, canvas.height);
   return geo.panels.findIndex((p) => x >= p.x && x < p.x + p.w && y >= p.y && y < p.y + p.h);
 }
@@ -325,10 +396,9 @@ function bindPreview() {
     const panel = geo.panels[selectedPanel];
     if (!panel) return;
     const crop = state.crops[selectedPanel] || (state.crops[selectedPanel] = { zoom: 1, ox: 0, oy: 0 });
-    const img = state.photos[panel.photo];
+    const photoIndex = state.panelPhoto[selectedPanel] ?? panel.photo;
+    const img = state.photos[photoIndex];
     if (!img) return;
-    // A drag moves the photo by the same share of its overflow that the
-    // pointer moved across the panel, so the pan feels 1:1 at any zoom.
     const base = Math.max(panel.w / img.naturalWidth, panel.h / img.naturalHeight);
     const scale = base * (crop.zoom || 1);
     const overX = Math.max(1, img.naturalWidth * scale - panel.w) / 2;
@@ -346,6 +416,7 @@ function bindPreview() {
     e.preventDefault();
     const crop = state.crops[selectedPanel] || (state.crops[selectedPanel] = { zoom: 1, ox: 0, oy: 0 });
     crop.zoom = Math.max(1, Math.min(3, crop.zoom * (e.deltaY < 0 ? 1.12 : 1 / 1.12)));
+    zoomEl.value = String(crop.zoom);
     redraw();
   }, { passive: false });
 }
@@ -354,31 +425,21 @@ function bindPreview() {
 
 async function boot() {
   buildPickers();
-  buildPhotoSlots();
+  buildPhotoStrip();
+  bindPhotos();
   bindWords();
   bindExport();
   bindPreview();
-  state.crops = defaultCrops(state.layout, panelCountFor(state.layout));
-  try {
-    state.photos.A = await loadImage('samples/boulevard.jpg');
-    state.photos.B = await loadImage('samples/pier.jpg');
-    state.photos.C = await loadImage('samples/boulevard.jpg');
-    document.querySelector('.slot[data-slot="A"] .thumb').src = 'samples/boulevard.jpg';
-    document.querySelector('.slot[data-slot="A"] .thumb').hidden = false;
-    document.querySelector('.slot[data-slot="B"] .thumb').src = 'samples/pier.jpg';
-    document.querySelector('.slot[data-slot="B"] .thumb').hidden = false;
-    document.querySelector('.slot[data-slot="C"] .thumb').src = 'samples/boulevard.jpg';
-    document.querySelector('.slot[data-slot="C"] .thumb').hidden = false;
-  } catch {
-    setStatus('Sample photos could not be loaded — upload your own.');
-  }
+  state.crops = freshCrops(state.layout);
+  const loaded = await loadSamples();
+  if (loaded === 0) setStatus('Sample photos could not be loaded — upload your own.');
   syncPickers();
   const params = new URLSearchParams(location.search);
   if (params.get('shot')) {
-    await runShot(params, state, { loadImage, redraw, applyLayout, setStatus });
+    await runShot(params, state, { loadImage, redraw, applyLayout, setStatus, loadSamples });
   } else {
     await redraw();
-    setStatus('Pick photos, a layout and a grade — then export your cover.');
+    if (loaded > 0) setStatus('Pick photos, a layout and a grade — then export your cover.');
   }
 }
 
