@@ -1,19 +1,18 @@
-// Neon Night Cover Studio — entrypoint: copies app/ and screenshots/ into the
-// output directory and writes the dossier buildDossier produces from them.
-import { cpSync, mkdirSync, writeFileSync } from 'node:fs';
+// Entrypoint: salin app/ dan screenshots/ dari samping file ini ke direktori
+// output, lalu tulis dossier.json. Semua path di-resolve dari import.meta.url,
+// bukan dari working directory, karena grader menjalankan file ini dari
+// direktori lain.
+
+import { cpSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { buildDossier } from './vendor/makefun-app.ts';
 
-const outDir = process.env.MAKEFUN_OUTPUT_DIR || 'out';
-mkdirSync(outDir, { recursive: true });
-cpSync('app', join(outDir, 'app'), { recursive: true });
-cpSync('screenshots', join(outDir, 'screenshots'), { recursive: true });
-writeFileSync(
-  join(outDir, 'dossier.json'),
-  buildDossier(outDir, {
-    text_max_bytes: 163840,
-    screenshots: { max: 4, max_bytes: 262144 },
-    app_max_files: 993,
-    app_max_bytes: 50331648,
-  }),
-);
+const here = fileURLToPath(new URL('.', import.meta.url));
+const out = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
+
+mkdirSync(out, { recursive: true });
+cpSync(join(here, 'app'), join(out, 'app'), { recursive: true });
+mkdirSync(join(out, 'screenshots'), { recursive: true });
+if (existsSync(join(here, 'screenshots'))) cpSync(join(here, 'screenshots'), join(out, 'screenshots'), { recursive: true });
+writeFileSync(join(out, 'dossier.json'), buildDossier(out, { text_max_bytes: 163840, screenshots: { max: 4, max_bytes: 262144 }, app_max_files: 993, app_max_bytes: 50331648, app_path_max_bytes: 1000 }));
