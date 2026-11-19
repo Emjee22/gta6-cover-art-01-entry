@@ -1,5 +1,1 @@
-[
-  { "name": "1-cover.jpg", "query": "?shot=cover&photo=pier&caption=Sunset%20Heist", "w": 1080, "h": 1080 },
-  { "name": "2-editor.jpg", "query": "?shot=editor&photo=boulevard&caption=Boulevard%20Queen", "w": 1280, "h": 720 },
-  { "name": "3-cover.jpg", "query": "?shot=cover&photo=boulevard&caption=Boulevard%20Queen", "w": 1080, "h": 1080 }
-]
+[{"h":720,"name":"1-cover-1920x1080.jpg","query":"?shot=cover&layout=collage&grade=violet&ink=0.45&title=NEON%20NIGHT&subtitle=city%20of%20neon%20dreams&kicker=WELCOME%20TO%20LEONIDA&tagline=EVERY%20LIGHT%20HIDES%20A%20STORY&w=1920&h=1080","w":1280},{"h":720,"name":"2-editor.jpg","query":"?shot=editor&layout=collage&grade=violet&ink=0.45&title=NEON%20NIGHT&subtitle=city%20of%20neon%20dreams&kicker=WELCOME%20TO%20LEONIDA&tagline=EVERY%20LIGHT%20HIDES%20A%20STORY","w":1280},{"h":1280,"name":"3-cover-1080x1350.jpg","query":"?shot=cover&layout=polaroid&grade=sunset&ink=0.4&title=SUNSET%20DRIVE&subtitle=chasing%20the%20last%20light&kicker=LEONIDA%20KEYS&tagline=ONE%20ROAD%20-%20ONE%20SUNSET&w=1080&h=1350","w":1024},{"h":1080,"name":"4-cover-1080x1080.jpg","query":"?shot=cover&layout=slices&grade=teal&ink=0.35&title=MIDNIGHT%20TIDE&subtitle=where%20the%20city%20meets%20the%20sea&kicker=VICE%20HARBOR&tagline=FIVE%20SLICES%20-%20ONE%20MOMENT&w=1080&h=1080","w":1080}]
