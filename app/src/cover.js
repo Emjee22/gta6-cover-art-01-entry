@@ -32,17 +32,6 @@ function mulberry32(a) {
   };
 }
 
-/** Shrink a font until `text` fits `maxW`; returns the size used. */
-function fitFont(ctx, text, family, weight, maxW, start, min) {
-  let size = start;
-  ctx.font = `${weight} ${size}px ${family}`;
-  while (size > min && ctx.measureText(text).width > maxW) {
-    size -= 2;
-    ctx.font = `${weight} ${size}px ${family}`;
-  }
-  return size;
-}
-
 /** Letter-spacing when the browser offers it (Chrome does). */
 function setSpacing(ctx, px) {
   if ('letterSpacing' in ctx) ctx.letterSpacing = `${px}px`;
@@ -216,9 +205,26 @@ function drawSkyline(ctx, x, y, w, h, seed) {
 
 // ---------------------------------------------------------------- title
 
-/** The big gradient display title, with a dark outline and a neon glow. */
-function drawDisplayTitle(ctx, text, cx, baseline, maxW, maxSize, minSize) {
-  const size = fitFont(ctx, text.toUpperCase(), 'Anton, sans-serif', '400', maxW, maxSize, minSize);
+/**
+ * The big gradient display title, with a dark outline and a neon glow.
+ * The size grows to fill `maxW` (up to `maxSize`); when the words are too
+ * short to fill the width at that size, letter-spacing spreads them out
+ * (up to `trackEm` em per gap) so the title still spans the band, poster
+ * style. Returns the size used.
+ */
+function drawDisplayTitle(ctx, text, cx, baseline, maxW, maxSize, minSize, trackEm = 0) {
+  const upper = text.toUpperCase();
+  // Probe the width at 100px, then pick the size that fills maxW.
+  ctx.font = '400 100px Anton, sans-serif';
+  const probeW = ctx.measureText(upper).width / 100; // px of width per px of size
+  let size = Math.min(maxSize, maxW / probeW);
+  size = Math.max(minSize, size);
+  let tracking = 0;
+  const plainW = size * probeW;
+  if (trackEm > 0 && plainW < maxW && upper.length > 1) {
+    tracking = Math.min((maxW - plainW) / (upper.length - 1), size * trackEm);
+  }
+  ctx.font = `400 ${size}px Anton, sans-serif`;
   const grad = ctx.createLinearGradient(0, baseline - size, 0, baseline + size * 0.12);
   grad.addColorStop(0, '#fff6bf');
   grad.addColorStop(0.45, '#ffb347');
@@ -227,15 +233,17 @@ function drawDisplayTitle(ctx, text, cx, baseline, maxW, maxSize, minSize) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   ctx.lineJoin = 'round';
+  setSpacing(ctx, Math.round(tracking));
   ctx.shadowColor = 'rgba(255,45,120,0.55)';
   ctx.shadowBlur = size * 0.10;
   ctx.shadowOffsetY = size * 0.02;
   ctx.strokeStyle = '#160a2e';
   ctx.lineWidth = size * 0.09;
-  ctx.strokeText(text.toUpperCase(), cx, baseline);
+  ctx.strokeText(upper, cx, baseline);
   ctx.fillStyle = grad;
-  ctx.fillText(text.toUpperCase(), cx, baseline);
+  ctx.fillText(upper, cx, baseline);
   ctx.restore();
+  setSpacing(ctx, 0);
   return size;
 }
 
@@ -249,33 +257,43 @@ function drawBand(ctx, band, state, seed) {
   bg.addColorStop(1, '#a11768');
   ctx.fillStyle = bg;
   ctx.fillRect(x, y, w, h);
-  const skyH = h * 0.12;
+  const skyH = h * 0.10;
   drawSkyline(ctx, x, y + h - skyH, w, skyH, `${seed}-sky`);
   const cx = x + w / 2;
-  // Kicker.
+  // Kicker, small caps at the top of the band.
   const kicker = (state.kicker || '').trim().toUpperCase();
   if (kicker) {
-    const fs = Math.max(12, Math.round(h * 0.085));
+    const fs = Math.max(12, Math.round(h * 0.06));
     ctx.save();
     setSpacing(ctx, Math.round(fs * 0.28));
     ctx.font = `bold ${fs}px Anton, sans-serif`;
     ctx.fillStyle = '#ffd76a';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(kicker, cx, y + h * 0.07);
+    ctx.fillText(kicker, cx, y + h * 0.055);
     setSpacing(ctx, 0);
     ctx.restore();
   }
-  // Title.
+  // Title: grown to fill the band edge to edge, with poster tracking when
+  // the words are short (NEON NIGHT is 4.23em wide, so it needs both).
   const title = (state.title || 'NEON NIGHT').trim();
-  const titleSize = drawDisplayTitle(ctx, title, cx, y + h * 0.48, w * 0.94, h * 0.40, h * 0.16);
-  // Script subtitle, tucked under the title.
+  const titleSize = drawDisplayTitle(ctx, title, cx, y + h * 0.69, w * 0.94, h * 0.68, h * 0.16, 0.15);
+  // Script subtitle, big and offset right so its loops cross the title's
+  // lower edge like the top covers do, instead of hiding underneath it.
+  // The size follows the band height, then shrinks if the right offset
+  // would push it past the band edge (narrow exports: tall but thin band).
   const sub = (state.subtitle || '').trim();
   if (sub) {
+    let subFs = Math.round(h * 0.225);
+    ctx.font = `${subFs}px Pacifico, cursive`;
+    const subCx = cx + w * 0.16;
+    const room = Math.min(subCx - (x + w * 0.03), (x + w * 0.97) - subCx) * 2;
+    const subW = ctx.measureText(sub).width;
+    if (subW > room) subFs = Math.max(24, Math.round(subFs * room / subW));
     ctx.save();
-    ctx.translate(cx, y + h * 0.64);
+    ctx.translate(subCx, y + h * 0.77);
     ctx.rotate(-0.035);
-    ctx.font = `${Math.round(h * 0.14)}px Pacifico, cursive`;
+    ctx.font = `${subFs}px Pacifico, cursive`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.shadowColor = 'rgba(255,140,220,0.9)';
@@ -284,17 +302,29 @@ function drawBand(ctx, band, state, seed) {
     ctx.fillText(sub, 0, 0);
     ctx.restore();
   }
-  // Tagline, just above the skyline strip.
+  // Tagline as a full-width strip: rules run to the band edges with the
+  // caps centred between them, sitting over the skyline at the foot.
   const tag = (state.tagline || '').trim().toUpperCase();
   if (tag) {
-    const fs = Math.max(11, Math.round(h * 0.055));
+    const fs = Math.max(11, Math.round(h * 0.058));
     ctx.save();
-    setSpacing(ctx, Math.round(fs * 0.22));
+    setSpacing(ctx, Math.round(fs * 0.30));
     ctx.font = `bold ${fs}px Anton, sans-serif`;
-    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    const tagW = ctx.measureText(tag).width;
+    const ruleY = y + h * 0.96;
+    const gap = Math.round(fs * 0.9);
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+    ctx.lineWidth = Math.max(2, Math.round(fs * 0.08));
+    ctx.beginPath();
+    ctx.moveTo(x + w * 0.04, ruleY);
+    ctx.lineTo(cx - tagW / 2 - gap, ruleY);
+    ctx.moveTo(cx + tagW / 2 + gap, ruleY);
+    ctx.lineTo(x + w * 0.96, ruleY);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.92)';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(tag, cx, y + h * 0.83);
+    ctx.fillText(tag, cx, ruleY);
     setSpacing(ctx, 0);
     ctx.restore();
   }
@@ -381,11 +411,11 @@ export function drawCover(canvas, state) {
   const first = geo.panels[0];
   if (first) {
     if (state.showStarburst !== false && first.w >= 260) {
-      const r = Math.max(26, Math.min(first.w, first.h) * 0.11);
+      const r = Math.max(30, Math.min(first.w, first.h) * 0.14);
       drawStarburst(ctx, first.x + first.w - r - 12, first.y + r + 12, r, 'EST.', '2026');
     }
     if (state.showStars !== false && first.w >= 300) {
-      drawStarsPill(ctx, first.x + 14, first.y + 14, Math.max(0.7, Math.min(first.w, first.h) / 500));
+      drawStarsPill(ctx, first.x + 14, first.y + 14, Math.max(1.0, Math.min(first.w, first.h) / 380));
     }
   }
 }
