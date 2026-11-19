@@ -54,6 +54,7 @@ input[type="text"] {
   margin-top: 4px;
 }
 input[type="text"]:focus { outline: 2px solid var(--pink); outline-offset: 1px; }
+input[type="range"] { width: 100%; accent-color: var(--pink); }
 
 .topbar {
   display: flex;
@@ -108,21 +109,35 @@ input[type="text"]:focus { outline: 2px solid var(--pink); outline-offset: 1px; 
 .group > label { display: block; margin-bottom: 10px; font-size: 13px; color: var(--muted); }
 .hint { color: var(--muted); font-size: 13px; margin: 0 0 10px; }
 .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-.slot {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 10px;
+.slider { display: block; font-size: 13px; color: var(--muted); margin-top: 10px; }
+.slider input { margin-top: 6px; }
+
+.photostrip {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
   margin-bottom: 10px;
 }
-.slot h3 { margin: 0 0 8px; font-size: 14px; }
-.slot .thumb {
+.photo-thumb {
+  padding: 0;
+  overflow: hidden;
+  border-radius: 8px;
+  position: relative;
+  aspect-ratio: 3 / 4;
+}
+.photo-thumb img {
   display: block;
   width: 100%;
-  max-height: 110px;
+  height: 100%;
   object-fit: cover;
-  border-radius: 6px;
-  margin-bottom: 8px;
+}
+.photo-thumb span {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  font-size: 10px;
+  text-align: center;
+  background: rgba(10, 4, 28, 0.8);
+  padding: 2px 1px;
 }
 .upload {
   display: inline-block;
@@ -136,6 +151,7 @@ input[type="text"]:focus { outline: 2px solid var(--pink); outline-offset: 1px; 
 .picker button { text-align: left; padding: 10px; }
 .picker button strong { display: block; font-size: 14px; }
 .picker button span { display: block; font-size: 12px; color: var(--muted); }
+.picker.grades { grid-template-columns: 1fr; }
 .picker.grades button { display: flex; align-items: center; gap: 8px; }
 .picker.grades button i {
   width: 26px; height: 26px;
