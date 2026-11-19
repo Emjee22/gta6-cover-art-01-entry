@@ -8,7 +8,7 @@
 // geometry drives the 1920x1080, 1080x1350 and 1080x1080 exports.
 
 export const LAYOUTS = [
-  { id: 'big-left', label: 'Big Left', hint: 'Hero left, two stacked right' },
+  { id: 'big-left', label: 'Big Left', hint: 'Hero left, three stacked right' },
   { id: 'grid', label: 'Poster Grid', hint: '3 x 3, title in the middle' },
   { id: 'filmstrip', label: 'Filmstrip', hint: 'Hero band over three strips' },
   { id: 'split', label: 'Split', hint: 'Two tall panels side by side' },
@@ -46,7 +46,7 @@ export function layoutGeometry(layoutId, w, h) {
   }
 
   if (layoutId === 'filmstrip') {
-    const bandH = h * 0.30;
+    const bandH = h * 0.38;
     const stripH = (h - bandH - g * 3) * 0.3;
     const heroH = h - bandH - stripH - g * 3;
     const sw = (w - g * 4) / 3;
@@ -63,7 +63,7 @@ export function layoutGeometry(layoutId, w, h) {
   }
 
   if (layoutId === 'split') {
-    const bandH = h * 0.30;
+    const bandH = h * 0.38;
     const ph = h - bandH - g * 2;
     const pw = (w - g * 3) / 2;
     return {
@@ -76,17 +76,19 @@ export function layoutGeometry(layoutId, w, h) {
     };
   }
 
-  // big-left (default): hero portrait on the left, two stacked on the right.
-  const bandH = h * 0.30;
+  // big-left (default): hero portrait on the left, three stacked on the right.
+  const bandH = h * 0.38;
   const ph = h - bandH - g * 2;
   const heroW = (w - g * 3) * 0.56;
   const sideW = w - heroW - g * 3;
-  const sideH = (ph - g) / 2;
+  const sideH = (ph - g * 2) / 3;
+  const sideX = g * 2 + heroW;
   return {
     panels: [
       rect(g, g, heroW, ph, 'A'),
-      rect(g * 2 + heroW, g, sideW, sideH, 'B'),
-      rect(g * 2 + heroW, g * 2 + sideH, sideW, sideH, 'A'),
+      rect(sideX, g, sideW, sideH, 'B'),
+      rect(sideX, g * 2 + sideH, sideW, sideH, 'C'),
+      rect(sideX, g * 3 + sideH * 2, sideW, sideH, 'A'),
     ],
     band: { x: 0, y: h - bandH, w, h: bandH },
     titleCell: null,
