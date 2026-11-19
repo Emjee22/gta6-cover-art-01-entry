@@ -1,50 +1,29 @@
 # Neon Night Cover Studio
 
-[![gta6-cover-art-01](https://make.fun/badge/gta6-cover-art-01.svg)](https://make.fun/bounty/gta6-cover-art-01)
+[![make.fun](https://make.fun/badge/gta6-cover-art-01.svg)](https://make.fun/bounty/gta6-cover-art-01)
 [![rank](https://make.fun/badge/gta6-cover-art-01/Emjee22/gta6-cover-art-01-entry/rank.svg)](https://make.fun/bounty/gta6-cover-art-01)
 [![reward](https://make.fun/badge/gta6-cover-art-01/Emjee22/gta6-cover-art-01-entry/reward.svg)](https://make.fun/bounty/gta6-cover-art-01)
 
-Turn your photos into multi-panel GTA-style poster cover art — right in the
-browser, fully offline, nothing uploaded.
+Neon Night Cover Studio turns one of your photos and a caption into a GTA 6-style multi-panel cover poster, right in the browser. Pick a photo, pick a layout, pick a grade, type a title, and export the finished cover as a PNG — no upload, no account, everything runs offline on your own machine.
 
 ## What it does
 
-- **Multi-panel covers**: pick 1–3 photos and the studio lays them out as a
-  poster collage — hero portrait, stacked panels, a 3×3 grid with a title
-  cell, a filmstrip, or a two-panel split.
-- **5 colour grades**: Neon Night (deep indigo + hot magenta), Sunset Vice,
-  Poster Ink (halftone print), Teal Dawn, Mono Noir.
-- **Big poster lettering**: a huge gradient display title, a neon script
-  subtitle, a kicker, a tagline, and poster furniture — a starburst
-  "EST. 2026" badge, a HEAT ★★★★★ pill, a skyline and a barcode.
-- **Crop by hand**: click a panel to select it, drag to pan its photo,
-  scroll to zoom, reset when you want the framing back.
-- **One-click PNG export** in all three sizes the bounty asks for:
-  1920×1080, 1080×1350 and 1080×1080 — "Export all 3 sizes" saves them
-  together. What the preview shows is exactly what the PNG will be.
-- **Surprise me**: one click randomises the layout, grade and words.
+- **4 layouts**: a multi-panel collage, a polaroid scatter, a five-slice split of one photo, and a poster grid.
+- **5 grades**: cold Vice Violet, warm Sunset Vice, halftone Poster Ink, Teal Dawn, and Mono Noir — each applied per pixel as a gradient map.
+- **Big poster type**: a gradient title that grows to fit, a neon script subtitle, a kicker line, a tagline strip, a skyline silhouette, and starburst and rating badges.
+- **5 sample photos** included, or bring your own with the photo picker.
+- **PNG export in 3 sizes**: 1920x1080, 1080x1350, and 1080x1080, one click for all three.
 
-## Try it
+## Run it
+
+Open `app/index.html` in a desktop browser, or serve the `app/` folder with any static server. Everything is local: no network requests, no tracking.
+
+## Build the dossier
 
 ```sh
-node serve.ts
-# open http://localhost:8080
+MAKEFUN_OUTPUT_DIR=out node main.ts
 ```
 
-No build step, no network: `app/index.html` plus its own scripts, styles,
-fonts (Anton and Pacifico, SIL Open Font License, under `app/fonts/`) and
-two image-model sample photos (`app/samples/`, made for make.fun and free
-to use). Upload your own photos to make a cover that is yours.
+This copies `app/` and `screenshots/` into `out/` and writes `out/dossier.json` using the competition kit's `vendor/makefun-app.ts`.
 
-## Hand in
-
-`main.ts` (Node 22, standard library only) copies `app/` and `screenshots/`
-to `/output` and writes `/output/dossier.json` with the vendored make.fun
-library:
-
-```sh
-mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
-```
-
-Built for the [gta6-cover-art-01 bounty](https://make.fun/bounty/gta6-cover-art-01)
-on make.fun.
+Built for the [Make GTA 6 Cover Art](https://make.fun/bounty/gta6-cover-art-01) bounty on [make.fun](https://make.fun).
