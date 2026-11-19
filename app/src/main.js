@@ -55,8 +55,9 @@ let fontsReady = false;
 const SLOT_CROPS = {
   'big-left': [
     { zoom: 1, ox: 0, oy: 0.65 }, // hero A — face up into the frame
-    { zoom: 1.15, ox: 0, oy: 0.9 }, // top B — hat and face
-    { zoom: 1.4, ox: 0.26, oy: -0.3 }, // bottom A — hand on the car door
+    { zoom: 1, ox: 0, oy: 0.85 }, // top B — hat and face
+    { zoom: 1, ox: 0.05, oy: 0.6 }, // middle C — face in frame
+    { zoom: 1.1, ox: 0.26, oy: -0.3 }, // bottom A — hand on the car door
   ],
   grid: [
     { zoom: 1.15, ox: 0, oy: 0.58 },
@@ -131,8 +132,8 @@ function applyLayout(layoutId) {
 }
 
 function panelCountFor(layoutId) {
-  // Keep in sync with layouts.js: grid has 8 panels, filmstrip 4, split 2.
-  return layoutId === 'grid' ? 8 : layoutId === 'filmstrip' ? 4 : layoutId === 'split' ? 2 : 3;
+  // Keep in sync with layouts.js: grid 8 panels, filmstrip 4, split 2, big-left 4.
+  return layoutId === 'grid' ? 8 : layoutId === 'filmstrip' ? 4 : layoutId === 'split' ? 2 : 4;
 }
 
 function syncPickers() {
