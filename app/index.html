@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Neon Night Cover Studio — GTA-style cover art from your photos</title>
+<title>Neon Night Cover Studio — poster cover art from your photos</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="./style.css">
 </head>
@@ -25,33 +25,12 @@
   <section class="controls" aria-label="Cover controls">
     <section class="group">
       <h2>1 · Photos</h2>
-      <p class="hint">Three slots feed the panels. Boulevard and Pier are free samples; upload your own to make it yours.</p>
-      <div class="slot" data-slot="A">
-        <h3>A · Hero photo</h3>
-        <img class="thumb" alt="" hidden>
-        <div class="row">
-          <button type="button" data-sample="boulevard" class="active">Boulevard</button>
-          <button type="button" data-sample="pier">Pier</button>
-          <label class="upload">Upload <input type="file" accept="image/*" hidden></label>
-        </div>
-      </div>
-      <div class="slot" data-slot="B">
-        <h3>B · Second photo</h3>
-        <img class="thumb" alt="" hidden>
-        <div class="row">
-          <button type="button" data-sample="boulevard">Boulevard</button>
-          <button type="button" data-sample="pier" class="active">Pier</button>
-          <label class="upload">Upload <input type="file" accept="image/*" hidden></label>
-        </div>
-      </div>
-      <div class="slot" data-slot="C">
-        <h3>C · Third photo</h3>
-        <img class="thumb" alt="" hidden>
-        <div class="row">
-          <button type="button" data-sample="boulevard" class="active">Boulevard</button>
-          <button type="button" data-sample="pier">Pier</button>
-          <label class="upload">Upload <input type="file" accept="image/*" hidden></label>
-        </div>
+      <p class="hint">Five photos feed the panels. The samples are free to use; upload your own to make it yours. Click a photo to put it in the selected panel.</p>
+      <div id="photostrip" class="photostrip"></div>
+      <div class="row">
+        <button id="loadSamples" type="button">Load samples</button>
+        <button id="autoFill" type="button">Auto-fill panels</button>
+        <label class="upload">Upload photos <input id="upload" type="file" accept="image/*" multiple hidden></label>
       </div>
     </section>
 
@@ -63,6 +42,9 @@
     <section class="group">
       <h2>3 · Grade</h2>
       <div id="grades" class="picker grades"></div>
+      <label class="slider">Poster Ink — halftone dots
+        <input id="ink" type="range" min="0" max="100" value="40">
+      </label>
     </section>
 
     <section class="group">
@@ -74,25 +56,33 @@
       <div class="checks">
         <label><input id="showStarburst" type="checkbox" checked> Starburst badge</label>
         <label><input id="showStars" type="checkbox" checked> HEAT ★★★★★ pill</label>
-        <label><input id="showBarcode" type="checkbox" checked> Barcode</label>
       </div>
     </section>
 
     <section class="group">
-      <h2>5 · Export</h2>
+      <h2>5 · Selected panel</h2>
+      <label class="slider">Zoom
+        <input id="zoom" type="range" min="1" max="3" step="0.05" value="1">
+      </label>
+      <div class="row">
+        <button id="resetCrop" type="button">Reset crops</button>
+      </div>
+    </section>
+
+    <section class="group">
+      <h2>6 · Export</h2>
       <div id="sizes" class="sizes"></div>
       <div class="row">
         <button id="exportOne" type="button" class="primary">Export this size</button>
-        <button id="resetCrop" type="button">Reset crops</button>
       </div>
       <p id="status" role="status"></p>
     </section>
   </section>
 
   <section class="stage" aria-label="Live preview">
-    <p id="selectedPanel" class="selected">Panel 1 selected — drag to pan, scroll to zoom.</p>
+    <p id="selectedPanel" class="selected">Panel 1 selected — click a photo below to put it here, drag to pan, scroll to zoom.</p>
     <canvas id="preview" width="1920" height="1080" aria-label="The cover preview"></canvas>
-    <p class="hint">Click a panel to select it. Drag to pan its photo, scroll to zoom it. What you see is what the PNG will be.</p>
+    <p class="hint">Click a panel to select it. Drag to pan its photo, scroll or slide to zoom it. What you see is what the PNG will be.</p>
   </section>
 </main>
 <script type="module" src="./src/main.js"></script>
