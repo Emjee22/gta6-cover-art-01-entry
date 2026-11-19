@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neon Night Cover Studio — GTA-style cover art from your photos</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="mark">NN</span>
+    <div>
+      <h1>Neon Night Cover Studio</h1>
+      <p>Your photos, drawn as poster cover art — offline, nothing uploads.</p>
+    </div>
+  </div>
+  <div class="top-actions">
+    <button id="surprise" type="button">Surprise me</button>
+    <button id="exportAll" type="button" class="primary">Export all 3 sizes</button>
+  </div>
+</header>
+
+<main class="app">
+  <section class="controls" aria-label="Cover controls">
+    <section class="group">
+      <h2>1 · Photos</h2>
+      <p class="hint">Three slots feed the panels. Boulevard and Pier are free samples; upload your own to make it yours.</p>
+      <div class="slot" data-slot="A">
+        <h3>A · Hero photo</h3>
+        <img class="thumb" alt="" hidden>
+        <div class="row">
+          <button type="button" data-sample="boulevard" class="active">Boulevard</button>
+          <button type="button" data-sample="pier">Pier</button>
+          <label class="upload">Upload <input type="file" accept="image/*" hidden></label>
+        </div>
+      </div>
+      <div class="slot" data-slot="B">
+        <h3>B · Second photo</h3>
+        <img class="thumb" alt="" hidden>
+        <div class="row">
+          <button type="button" data-sample="boulevard">Boulevard</button>
+          <button type="button" data-sample="pier" class="active">Pier</button>
+          <label class="upload">Upload <input type="file" accept="image/*" hidden></label>
+        </div>
+      </div>
+      <div class="slot" data-slot="C">
+        <h3>C · Third photo</h3>
+        <img class="thumb" alt="" hidden>
+        <div class="row">
+          <button type="button" data-sample="boulevard" class="active">Boulevard</button>
+          <button type="button" data-sample="pier">Pier</button>
+          <label class="upload">Upload <input type="file" accept="image/*" hidden></label>
+        </div>
+      </div>
+    </section>
+
+    <section class="group">
+      <h2>2 · Layout</h2>
+      <div id="layouts" class="picker"></div>
+    </section>
+
+    <section class="group">
+      <h2>3 · Grade</h2>
+      <div id="grades" class="picker grades"></div>
+    </section>
+
+    <section class="group">
+      <h2>4 · Words</h2>
+      <label>Title <input id="title" type="text" maxlength="24" value="NEON NIGHT"></label>
+      <label>Script subtitle <input id="subtitle" type="text" maxlength="40" value="city of neon dreams"></label>
+      <label>Kicker <input id="kicker" type="text" maxlength="40" value="WELCOME TO LEONIDA"></label>
+      <label>Tagline <input id="tagline" type="text" maxlength="60" value="EVERY LIGHT HIDES A STORY"></label>
+      <div class="checks">
+        <label><input id="showStarburst" type="checkbox" checked> Starburst badge</label>
+        <label><input id="showStars" type="checkbox" checked> HEAT ★★★★★ pill</label>
+        <label><input id="showBarcode" type="checkbox" checked> Barcode</label>
+      </div>
+    </section>
+
+    <section class="group">
+      <h2>5 · Export</h2>
+      <div id="sizes" class="sizes"></div>
+      <div class="row">
+        <button id="exportOne" type="button" class="primary">Export this size</button>
+        <button id="resetCrop" type="button">Reset crops</button>
+      </div>
+      <p id="status" role="status"></p>
+    </section>
+  </section>
+
+  <section class="stage" aria-label="Live preview">
+    <p id="selectedPanel" class="selected">Panel 1 selected — drag to pan, scroll to zoom.</p>
+    <canvas id="preview" width="1920" height="1080" aria-label="The cover preview"></canvas>
+    <p class="hint">Click a panel to select it. Drag to pan its photo, scroll to zoom it. What you see is what the PNG will be.</p>
+  </section>
+</main>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
